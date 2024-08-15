@@ -32,8 +32,33 @@ use core::{arch::global_asm, ffi::c_void};
 pub use cortex_m_rt::*;
 
 global_asm! {r#"
+.section .__imxrt_rt_flash,"ax"
+
+.cfi_sections debug_frame
+.type __imxrt_rt_memcpy,%function
+.thumb_func
+.cfi_startproc
+
+# r0 - Start of the VMA region.
+# r1 - End of the VMA region.
+# r2 - Start of the LMA region.
+# r3 - Scratch.
+__imxrt_rt_memcpy:
+    cmp r2, r0
+    beq 987f
+654:
+    cmp r1, r0
+    beq 987f
+    ldm r2!, {{r3}}
+    stm r0!, {{r3}}
+    b 654b
+987:
+    bx lr
+
+.cfi_endproc
+.size __imxrt_rt_memcpy, . - __imxrt_rt_memcpy
+
 .cfi_sections .debug_frame
-.section .__pre_init,"ax"
 .global __pre_init
 .type __pre_init,%function
 .thumb_func
@@ -77,53 +102,30 @@ __pre_init:
     str r1, [r0, #0]
 
     copy_from_flash:
+    # We should now be able to touch the stack, no matter where
+    # it is in memory.
+    push {{lr}}
+
     # Conditionally copy text.
     ldr r0, =__stext
     ldr r2, =__sitext
-    cmp r2, r0
-    beq 42f
-
     ldr r1, =__etext
-    43:
-    cmp r1, r0
-    beq 42f
-    ldm r2!, {{r3}}
-    stm r0!, {{r3}}
-    b 43b
-    42:
+    bl __imxrt_rt_memcpy
 
     # Conditionally copy the vector table.
     ldr r0, =__svector_table
     ldr r2, =__sivector_table
-    cmp r2, r0
-    beq 52f
-
     ldr r1, =__evector_table
-    53:
-    cmp r1, r0
-    beq 52f
-    ldm r2!, {{r3}}
-    stm r0!, {{r3}}
-    b 53b
-    52:
+    bl __imxrt_rt_memcpy
 
     # Conditionally copy read-only data.
     ldr r0, =__srodata
     ldr r2, =__sirodata
-    cmp r2, r0
-    beq 62f
-
     ldr r1, =__erodata
-    63:
-    cmp r1, r0
-    beq 62f
-    ldm r2!, {{r3}}
-    stm r0!, {{r3}}
-    b 63b
-    62:
+    bl __imxrt_rt_memcpy
 
     # All done; back to the reset handler.
-    bx lr
+    pop {{pc}}
 
 .cfi_endproc
 .size __pre_init, . - __pre_init
