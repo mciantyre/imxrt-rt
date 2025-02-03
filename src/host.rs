@@ -127,7 +127,20 @@ fn region_alias(output: &mut dyn Write, name: &str, placement: Memory) -> io::Re
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct FlashOpts {
     size: usize,
+    offset: u32,
     flexspi: FlexSpi,
+}
+
+impl FlashOpts {
+    pub fn start_address(&self, family: Family) -> Option<u32> {
+        self.flexspi
+            .start_address(family)
+            .map(|start_address| start_address + self.offset)
+    }
+
+    pub fn is_boot_image(&self) -> bool {
+        self.offset == 0
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -342,6 +355,30 @@ impl RuntimeBuilder {
             heap_size: EnvOverride::new(0),
             flash_opts: Some(FlashOpts {
                 size: flash_size,
+                offset: 0,
+                flexspi: FlexSpi::family_default(family),
+            }),
+            linker_script_name: DEFAULT_LINKER_SCRIPT_NAME.into(),
+        }
+    }
+
+    pub fn in_flash(family: Family, partition_size: usize, partition_offset: u32) -> Self {
+        Self {
+            family,
+            flexram_banks: family.default_flexram_banks(),
+            text: Memory::Itcm,
+            rodata: Memory::Ocram,
+            data: Memory::Ocram,
+            vectors: Memory::Dtcm,
+            bss: Memory::Ocram,
+            uninit: Memory::Ocram,
+            stack: Memory::Dtcm,
+            stack_size: EnvOverride::new(8 * 1024),
+            heap: Memory::Dtcm,
+            heap_size: EnvOverride::new(0),
+            flash_opts: Some(FlashOpts {
+                size: partition_size,
+                offset: partition_offset,
                 flexspi: FlexSpi::family_default(family),
             }),
             linker_script_name: DEFAULT_LINKER_SCRIPT_NAME.into(),
@@ -508,19 +545,21 @@ impl RuntimeBuilder {
         if let Some(flash_opts) = &self.flash_opts {
             write_flash_memory_map(writer, self.family, flash_opts, &self.flexram_banks)?;
 
-            let boot_header_x = match self.family {
-                Family::Imxrt1010
-                | Family::Imxrt1015
-                | Family::Imxrt1020
-                | Family::Imxrt1040
-                | Family::Imxrt1050
-                | Family::Imxrt1060
-                | Family::Imxrt1064
-                | Family::Imxrt1160
-                | Family::Imxrt1170 => include_bytes!("host/imxrt-boot-header.x").as_slice(),
-                Family::Imxrt1180 => include_bytes!("host/imxrt-boot-header-1180.x").as_slice(),
-            };
-            writer.write_all(boot_header_x)?;
+            if flash_opts.is_boot_image() {
+                let boot_header_x = match self.family {
+                    Family::Imxrt1010
+                        | Family::Imxrt1015
+                        | Family::Imxrt1020
+                        | Family::Imxrt1040
+                        | Family::Imxrt1050
+                        | Family::Imxrt1060
+                        | Family::Imxrt1064
+                        | Family::Imxrt1160
+                        | Family::Imxrt1170 => include_bytes!("host/imxrt-boot-header.x").as_slice(),
+                    Family::Imxrt1180 => include_bytes!("host/imxrt-boot-header-1180.x").as_slice(),
+                };
+                writer.write_all(boot_header_x)?;
+            }
         } else {
             write_ram_memory_map(writer, self.family, &self.flexram_banks)?;
         }
@@ -695,10 +734,7 @@ fn write_flash_memory_map(
     writeln!(
         output,
         "FLASH (RX) : ORIGIN = {:#X}, LENGTH = {:#X}",
-        flash_opts
-            .flexspi
-            .start_address(family)
-            .expect("Already checked"),
+        flash_opts.start_address(family).expect("Already checked"),
         flash_opts.size
     )?;
     write_flexram_memories(output, family, flexram_banks)?;
