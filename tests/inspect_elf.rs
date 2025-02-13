@@ -43,7 +43,10 @@ fn cargo_build_nonboot(board: &str) -> Result<PathBuf> {
     let status = Command::new("cargo")
         .arg("build")
         .arg("--example=blink-rtic")
-        .arg(format!("--features=board/{},board/rtic,board/nonboot", board))
+        .arg(format!(
+            "--features=board/{},board/rtic,board/nonboot",
+            board
+        ))
         .arg("--target=thumbv7em-none-eabihf")
         .arg(format!("--target-dir=target/{}-nonboot", board))
         .arg("--quiet")
@@ -684,16 +687,20 @@ fn imxrt1170evk_cm7_nonboot() {
     assert_eq!(binary.symbol_value("__dcd_start"), None);
     assert_eq!(binary.symbol_value("__dcd_end"), None);
     assert_eq!(binary.symbol_value("__dcd"), None);
-    assert!(
-        binary.fcb().is_err()
-    );
+    assert!(binary.fcb().is_err());
     assert_eq!(
         binary.flexram_config().unwrap(),
         0b1111111111111111_1010101010101010
     );
 
-    assert!(binary.ivt().is_err(), "Non boot image still contains boot IVT");
-    assert!(binary.section(".boot").is_err(), "Boot section is included in a non boot image");
+    assert!(
+        binary.ivt().is_err(),
+        "Non boot image still contains boot IVT"
+    );
+    assert!(
+        binary.section(".boot").is_err(),
+        "Boot section is included in a non boot image"
+    );
 
     let stack = binary.section(".stack").unwrap();
     assert_eq!(
@@ -719,11 +726,18 @@ fn imxrt1170evk_cm7_nonboot() {
         vector_table.address % 1024 == 0,
         "vector table is not 1024-byte aligned"
     );
-    assert_eq!(binary.section_lma(".vector_table"), 0x3000_0000 + IMAGE_OFFSET);
+    assert_eq!(
+        binary.section_lma(".vector_table"),
+        0x3000_0000 + IMAGE_OFFSET
+    );
 
     let xip = binary.section(".xip").unwrap();
     // xip's lma==vma
-    assert_eq!(xip.address, 0x3000_0000 + IMAGE_OFFSET + vector_table.size, "xip");
+    assert_eq!(
+        xip.address,
+        0x3000_0000 + IMAGE_OFFSET + vector_table.size,
+        "xip"
+    );
     assert_eq!(
         binary.section_lma(".xip"),
         0x3000_0000 + IMAGE_OFFSET + vector_table.size,

@@ -549,14 +549,14 @@ impl RuntimeBuilder {
             if flash_opts.is_boot_image() {
                 let boot_header_x = match self.family {
                     Family::Imxrt1010
-                        | Family::Imxrt1015
-                        | Family::Imxrt1020
-                        | Family::Imxrt1040
-                        | Family::Imxrt1050
-                        | Family::Imxrt1060
-                        | Family::Imxrt1064
-                        | Family::Imxrt1160
-                        | Family::Imxrt1170 => include_bytes!("host/imxrt-boot-header.x").as_slice(),
+                    | Family::Imxrt1015
+                    | Family::Imxrt1020
+                    | Family::Imxrt1040
+                    | Family::Imxrt1050
+                    | Family::Imxrt1060
+                    | Family::Imxrt1064
+                    | Family::Imxrt1160
+                    | Family::Imxrt1170 => include_bytes!("host/imxrt-boot-header.x").as_slice(),
                     Family::Imxrt1180 => include_bytes!("host/imxrt-boot-header-1180.x").as_slice(),
                 };
                 writer.write_all(boot_header_x)?;
