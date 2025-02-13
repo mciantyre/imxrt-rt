@@ -138,6 +138,7 @@ impl FlashOpts {
             .map(|start_address| start_address + self.offset)
     }
 
+    // An image has to be at the start of flash to be booted
     pub fn is_boot_image(&self) -> bool {
         self.offset == 0
     }
