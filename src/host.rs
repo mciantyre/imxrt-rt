@@ -132,14 +132,17 @@ struct FlashOpts {
 }
 
 impl FlashOpts {
-    pub fn start_address(&self, family: Family) -> Option<u32> {
+    /// Produce the flash address of the image within
+    /// FlexSPI memory.
+    fn flash_origin(&self, family: Family) -> Option<u32> {
         self.flexspi
             .start_address(family)
             .map(|start_address| start_address + self.offset)
     }
 
-    // An image has to be at the start of flash to be booted
-    pub fn is_boot_image(&self) -> bool {
+    /// A bootable image (with the boot header) isn't offset
+    /// in flash.
+    fn is_boot_image(&self) -> bool {
         self.offset == 0
     }
 }
@@ -363,6 +366,16 @@ impl RuntimeBuilder {
         }
     }
 
+    /// Allocate a flash partition for this program to be booted by your software.
+    ///
+    /// `partition_size` is the size of the flash allocation, in bytes, for this
+    /// program. `partition_offset` describes the byte offset where the partition
+    /// starts. The offset is from the start of the FlexSPI memory region.
+    ///
+    /// The program constructed at this flash location cannot be booted by NXP's boot
+    /// ROM. You should bring your own software to execute this program. Note that
+    /// [the runtime behaviors](RuntimeBuilder) ensure that the vector table is placed
+    /// in flash at the given `partition_offset`.
     pub fn in_flash(family: Family, partition_size: usize, partition_offset: u32) -> Self {
         Self {
             family,
@@ -735,7 +748,7 @@ fn write_flash_memory_map(
     writeln!(
         output,
         "FLASH (RX) : ORIGIN = {:#X}, LENGTH = {:#X}",
-        flash_opts.start_address(family).expect("Already checked"),
+        flash_opts.flash_origin(family).expect("Already checked"),
         flash_opts.size
     )?;
     write_flexram_memories(output, family, flexram_banks)?;
