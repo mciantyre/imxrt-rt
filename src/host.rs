@@ -376,6 +376,9 @@ impl RuntimeBuilder {
     /// ROM. You should bring your own software to execute this program. Note that
     /// [the runtime behaviors](RuntimeBuilder) ensure that the vector table is placed
     /// in flash at the given `partition_offset`.
+    ///
+    /// To compute a partition offset from two absolute flash addresses, use
+    /// [`Family::flexspi_start_addr`] to learn the FlexSPI starting address.
     pub fn in_flash(family: Family, partition_size: usize, partition_offset: u32) -> Self {
         Self {
             family,
@@ -950,6 +953,22 @@ impl Family {
                 dtcm: 1,
             },
         }
+    }
+
+    /// Returns the starting address for the given `flexspi` instance.
+    ///
+    /// If a FlexSPI instance isn't available for this family, the return
+    /// is `None`. Otherwise, the return is the starting address in the
+    /// MCU's memory map.
+    ///
+    /// ```
+    /// use imxrt_rt::{Family::*, FlexSpi::*};
+    ///
+    /// assert_eq!(Imxrt1060.flexspi_start_addr(FlexSpi1), Some(0x6000_0000));
+    /// assert!(Imxrt1010.flexspi_start_addr(FlexSpi2).is_none());
+    /// ```
+    pub fn flexspi_start_addr(self, flexspi: FlexSpi) -> Option<u32> {
+        flexspi.start_address(self)
     }
 }
 
