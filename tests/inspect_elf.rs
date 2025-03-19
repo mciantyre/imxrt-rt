@@ -748,7 +748,7 @@ fn imxrt1170evk_cm7_nonboot() {
     assert_eq!(text.address, ITCM, "text");
     assert_eq!(
         binary.section_lma(".text"),
-        0x3000_0000 + IMAGE_OFFSET + xip.size + vector_table.size,
+        0x3000_0000 + IMAGE_OFFSET + aligned(xip.size, 4) + vector_table.size,
         "text VMA expected behind vector table"
     );
 
