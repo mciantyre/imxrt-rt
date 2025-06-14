@@ -42,13 +42,10 @@ global_asm! {r#"
 .macro copy_section dst, src, end
     ldr r0, =\dst
     ldr r2, =\src
-    cmp r2, r0
-    beq 999f
-
     ldr r1, =\end
     888:
-    cmp r1, r0
-    beq 999f
+    cmp r0, r1
+    bhs 999f
     ldm r2!, {{r3}}
     stm r0!, {{r3}}
     b 888b
