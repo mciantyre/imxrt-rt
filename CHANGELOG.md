@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### cortex-m-rt 0.7.5
+
+Update to cortex-m-rt 0.7.5. The new runtime introduces additional build-time
+features. You could enable these features yourself by depending on the same
+`cortex-m-rt` package and selecting features. Here's how this runtime supports
+each `cortex-m-rt` feature.
+
+The `paint-stack` feature is not supported. Do not enable this feature.
+(Upstream commits suggest that we should be able to support stack painting in a
+future release.)
+
+The `zero-init-ram` feature will zero the VMA region of `.data` before copying
+contents from the load region. This isn't particularly useful, but it's safe to
+enable.
+
+This package still enables `set-vtor` and `set-sp` features by default. For
+convenience, this package still forwards the `device` feature.
+
 ## [0.1.7] 2025-06-14
 
 Introduce `RuntimeBuilder::in_flash` for creating images that can be launched

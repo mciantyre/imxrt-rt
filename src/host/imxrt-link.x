@@ -42,8 +42,9 @@ SECTIONS
     __estack = .;
     . += ALIGN(__stack_size, 8);
     __sstack = .;
-    /* Symbol expected by cortex-m-rt */
+    /* Symbols expected by cortex-m-rt */
     _stack_start = __sstack;
+    _stack_end   = __estack;
   } > REGION_STACK
 
   .vector_table : ALIGN(1024)
@@ -117,6 +118,9 @@ SECTIONS
     __edata = .;
   } > REGION_DATA AT> REGION_LOAD_DATA
   __sidata = LOADADDR(.data);
+
+  _ram_start = __sdata;
+  _ram_end = __edata;
 
   .bss (NOLOAD) : ALIGN(4)
   {
