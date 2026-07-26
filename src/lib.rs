@@ -175,10 +175,13 @@
 //! With this in place, your package should be able to use the `#[exception]` macro
 //! exported by `imxrt-rt`. See the `imxrt-rt` package examples for a demonstration.
 
-#![cfg_attr(all(target_arch = "arm", target_os = "none"), no_std)]
+#![cfg_attr(
+    all(target_arch = "arm", any(target_os = "threadx", target_os = "none")),
+    no_std
+)]
 
 cfg_if::cfg_if! {
-    if #[cfg(all(target_arch = "arm", target_os = "none"))] {
+    if #[cfg(all(target_arch = "arm", any(target_os = "threadx", target_os = "none")))] {
         mod target;
         pub use target::*;
     } else {

@@ -17,7 +17,7 @@ device = ["cortex-m-rt/device"]
 [dependencies]
 cfg-if = "1.0"
 
-[target.'cfg(all(target_arch = "arm", target_os = "none"))'.dependencies]
+[target.'cfg(all(target_arch = "arm", any(target_os = "none", target_os = "threadx")))'.dependencies]
 cortex-m-rt = { version = "0.7.3", features = ["set-vtor", "set-sp"] }
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))'.dev-dependencies]
